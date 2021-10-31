@@ -3,11 +3,11 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: build
-build:
+build: ## Build pacman
 	go build -o pacman
 
 .PHONY: run
-run: build certs
+run: build certs ## Build and run pacman
 	USE_MTLS=true \
 	TLS_ROOT_CA=$$(cat certs/PacMan_Root_CA.crt) \
 	TLS_SERVER_CERT=$$(cat certs/localhost.crt) \
@@ -15,10 +15,28 @@ run: build certs
 		./pacman
 
 .PHONY: test
-test:
-	go test ./...
+test: ## Run tests
+	go test -cover -race ./...
 
-certs:
+.PHONY: mocks
+mocks: ## Generate mocks for unit tests
+	mockgen -package=main -mock_names=registry=RegistryMock \
+		-source registry.go -destination=mock_registry.go registry
+	mockgen -package=main -mock_names=handler=HandlerMock \
+		-source handler.go -destination=mock_handler.go handler
+	mockgen -package=main -mock_names=Conn=NetConnMock \
+		-destination=mock_net_conn.go net Conn
+	mockgen -package=main -mock_names=Listener=NetListenerMock \
+		-destination=mock_net_listener.go net Listener
+
+.PHONY: cover
+cover: ## Generate test coverage report
+	@echo "mode: count" > coverage.out
+	@go test -coverprofile coverage.tmp ./...
+	@tail -n +2 coverage.tmp >> coverage.out
+	@go tool cover -html=coverage.out
+
+certs: ## Generate mTLS certs
 	# create CA
 	certstrap --depot-path certs init --common-name "PacMan Root CA"
 	# create server cert request
@@ -33,19 +51,19 @@ certs:
 OPENSSL_CLIENT := openssl s_client -quiet -no_ign_eof -connect localhost:9000 -cert certs/pacman_client.crt -key certs/pacman_client.key
 
 .PHONY: add
-add:
+add: ## Add a package, usage: make add name='name' deps='dep1 dep2'
 	(echo 'AddPackage $(name) $(deps)'; sleep 0.5) | $(OPENSSL_CLIENT)
 
 .PHONY: remove
-remove:
+remove: ## Remove a package, usage: make remove name='name'
 	(echo 'RemovePackage $(name)'; sleep 0.5) | $(OPENSSL_CLIENT)
 
 .PHONY: list
-list:
+list: ## List packages, usage: make list
 	(echo 'ListPackages'; sleep 0.5) | $(OPENSSL_CLIENT)
 
 .PHONY: seed
-seed:
+seed: ## Seed pacman with some test data
 	@make add name='AAA'
 	@make add name='BBB' deps='AAA'
 	@make add name='CCC' deps='BBB'
