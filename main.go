@@ -18,10 +18,12 @@ func main() {
 		logger.Fatal("cannot read env configs", zap.Error(err))
 	}
 
-	registry := newRegistry()
-
-	pacman := newPacman(logger, config, registry)
-	if err := pacman.start(); err != nil {
-		logger.Fatal("cannot start TCP service", zap.Error(err))
+	store := newInMemoryStore()
+	action := newAction(logger, store)
+	pacman := newPacman(logger, config, store, action)
+	listener, err := pacman.listen()
+	if err != nil {
+		logger.Fatal("cannot listen to TCP address", zap.String("listen", config.Listen), zap.Error(err))
 	}
+	pacman.serve(listener)
 }

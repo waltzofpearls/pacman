@@ -1,0 +1,22 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go_version: ["1.16.9", "1.17.2"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go_version }}
+      - name: Print version info
+        run: |
+          which go
+          go version
+      - name: Run go unit tests
+        run: go test -cover -race ./...

@@ -1,5 +1,13 @@
 # pacman
 
+[![Build Status][actions-badge]][actions-url]
+[![MIT licensed][mit-badge]][mit-url]
+
+[actions-badge]: https://github.com/waltzofpearls/pacman/workflows/ci/badge.svg
+[actions-url]: https://github.com/waltzofpearls/pacman/actions?query=workflow%3Aci+branch%3Amain
+[mit-badge]: https://img.shields.io/badge/license-MIT-green.svg
+[mit-url]: https://github.com/waltzofpearls/pacman/blob/main/LICENSE
+
 ## Getting started
 
 First, install certstrap so we can generate certs for mTLS. On MacOS use `brew install certstrap`, or
